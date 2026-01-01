@@ -1,2 +1,299 @@
-# Cloud-Security-Monitoring-System-on-AWS
-This project demonstrates the implementation of a robust, automated monitoring and alerting system within an AWS environment. The primary goal is to track access to sensitive credentials such as API keys and database passwords and provide real time notifications whenever these "secrets" are retrieved.
+Cloud Security Monitoring System on AWS
+Introduction
+
+This project focuses on building a Cloud Security Monitoring System on AWS using AWS CloudTrail, Amazon CloudWatch, and Amazon SNS.
+
+In modern cloud environments, sensitive information such as API keys, database credentials, and access tokens are often stored in AWS Secrets Manager. Every time a secret is accessed, it introduces a potential security risk. Therefore, organizations implement monitoring systems to track, log, and alert on such access events.
+
+This project demonstrates how to design and implement a practical monitoring solution to detect when secrets are accessed and notify stakeholders in real time. 
+Project Objectives
+
+In this project, we aim to:
+
+Set up AWS CloudTrail to track secret access events
+
+Use Amazon CloudWatch to store and analyze logs
+
+Create metric filters to detect secret access activity
+
+Configure CloudWatch Alarms to trigger alerts
+
+Use Amazon SNS to send email notifications when secrets are accessed
+
+Compare notification behavior using different AWS services
+
+Design Architecture
+
+The overall architecture of the monitoring system is as follows:
+
+AWS Secrets Manager ➡️ AWS CloudTrail ➡️ Amazon CloudWatch Logs ➡️  Metric Filter ➡️  CloudWatch Alarm ➡️  Amazon SNS  ➡️ Email Notification 
+
+<img width="940" height="353" alt="image" src="https://github.com/user-attachments/assets/9f6b9d9b-7c4c-4ece-800c-5b948be5a1cd" /> 
+
+Security Considerations
+
+⚠️ Important Note:
+
+An IAM user with administrative access was used only for demonstration purposes
+
+The root user was not used
+
+In real-world production environments, least-privilege IAM policies should always be enforced 
+
+Step 1: Create a Secret in AWS Secrets Manager
+
+Open AWS Secrets Manager
+
+Create a new secret
+
+Configure the secret value
+
+Configure rotation (optional), then click Next
+
+Review the details and click Store
+
+Verify that the secret has been successfully created
+
+For this project, a secret named mission_top_secret@07 was created.
+The stored value was a test string:
+
+“there is no secret lol”
+
+This secret will be used to generate access events for monitoring. 
+<img width="824" height="332" alt="image" src="https://github.com/user-attachments/assets/e84746bb-6c5e-4d14-8af8-d1a232f5f85d" />
+
+<img width="837" height="183" alt="image" src="https://github.com/user-attachments/assets/0c9f1ec1-ce0a-4992-90da-e10046760fbc" /> 
+
+Step 2: Configure AWS CloudTrail
+
+In this step, we configure AWS CloudTrail to track activities occurring in the AWS account, specifically secret access events.
+
+CloudTrail provides a detailed event history of all API activity performed by users, services, and resources. It is essential for security auditing, compliance, and troubleshooting.
+
+Configuration Details:
+
+Trail name: secret_manager_trail
+
+S3 bucket created with a unique name: maxx-secrets-manager-trail-no
+
+Log file SSE-KMS encryption was disabled to avoid additional charges (demo purpose)
+
+Enabled Management Events
+
+Selected both Read and Write events
+
+Reviewed the configuration and created the trail
+
+This setup ensures that API calls such as GetSecretValue are recorded.
+
+<img width="779" height="315" alt="image" src="https://github.com/user-attachments/assets/1d0405f8-84ab-4c87-9946-69a3119a344c" />
+
+Step 3: Generate Secret Access Events
+
+There are multiple ways to access a secret:
+
+Through AWS Secrets Manager in the console
+
+Using the AWS CLI
+
+In this project, the secret was accessed through the AWS Management Console by selecting the secret and clicking Retrieve secret value.
+
+A secret access event is generated whenever an IAM user or role calls the GetSecretValue API. This action automatically creates a CloudTrail log entry.
+
+By navigating to CloudTrail → Event history and filtering by Secrets Manager, we can view:
+
+Who accessed the secret
+
+When it was accessed
+
+Which API operation was used 
+
+<img width="940" height="198" alt="image" src="https://github.com/user-attachments/assets/473286c4-f7e0-43e4-92b0-83ff0fdaf314" />
+<img width="940" height="192" alt="image" src="https://github.com/user-attachments/assets/e9b4ab79-66e3-4d64-8401-e64bcd393e4d" />
+
+Step 4: Track Secret Access Using CloudWatch
+
+Amazon CloudWatch acts as the monitoring and logging system for AWS services.
+
+1. Enable CloudWatch Logs in CloudTrail
+
+Open CloudTrail and select the created trail
+
+Scroll to the CloudWatch Logs section
+
+Enable CloudWatch Logs
+
+Create a new Log Group
+
+Create a new IAM role that allows CloudTrail to send logs to CloudWatch
+
+A Log Group serves as a centralized location to manage related log data.
+
+<img width="940" height="373" alt="image" src="https://github.com/user-attachments/assets/e7da2489-6555-4136-a7ce-23d301f987d9" />
+
+2. View Logs in CloudWatch
+
+Open Amazon CloudWatch
+
+Navigate to Logs → Log groups
+
+Select the created Log Group (maxx-secret-manger-loggroups)
+
+Open the latest Log Stream
+
+View the log events generated by secret access
+
+This confirms that CloudTrail logs are successfully flowing into CloudWatch. 
+
+<img width="840" height="337" alt="image" src="https://github.com/user-attachments/assets/2665784a-c2e8-4955-b2ba-38ce45ff805a" />
+
+Step 5: Create a Metric Filter
+
+A Metric Filter scans CloudWatch log events and converts matching patterns into CloudWatch metrics that can be monitored and alarmed.
+
+Metric Filter Configuration:
+
+Filter pattern: "GetSecretValue"
+
+Metric namespace: Security Metrics
+
+Metric name: Secret is accessed
+
+Metric value: 1
+
+Each time the secret is accessed, the metric value increases.
+
+After reviewing the configuration, the metric filter was successfully created. 
+
+<img width="793" height="325" alt="image" src="https://github.com/user-attachments/assets/a5256659-278d-42cf-815c-6cde0071db91" /> 
+
+<img width="815" height="332" alt="image" src="https://github.com/user-attachments/assets/020e4a6e-4e13-41e2-932e-5fb2c323f87c" />
+
+Step 6: Create CloudWatch Alarm and SNS Topic
+
+A CloudWatch Alarm monitors a metric over time and triggers notifications when defined conditions are met.
+
+Alarm Configuration:
+
+Threshold type: Static
+
+Condition: Secret is accessed >= 1
+
+Alarm triggers when at least one secret access event occurs
+
+<img width="940" height="235" alt="image" src="https://github.com/user-attachments/assets/0759750e-8851-4ee8-b931-8056745e58f8" />
+
+SNS Configuration:
+
+Created a new SNS Topic 
+
+<img width="940" height="373" alt="image" src="https://github.com/user-attachments/assets/6814b36b-0a64-478b-93cd-def5bd1ccee0" />
+
+
+Subscribed an email endpoint
+
+Confirmed the subscription via email
+<img width="940" height="409" alt="image" src="https://github.com/user-attachments/assets/7d05a8e2-fa1b-4719-9d95-7d65920da2c5" /> 
+
+An SNS Topic follows a publish/subscribe model, allowing messages to be sent to multiple subscribers without coupling the publisher to the receivers. 
+
+Step 7: Test Email Notifications 
+
+
+After setting up the CloudWatch Alarm and SNS topic, email notifications were tested to verify the alerting workflow.
+
+Initially, SNS notifications were disabled at the CloudTrail level. After disabling notifications, the secret was accessed again to test the behavior. As expected, no email notification was received, even though the secret was accessed.
+
+At the same time, it was verified that:
+Logs were still being delivered correctly to AWS CloudTrail
+
+Log events were also visible in Amazon CloudWatch Logs
+
+This confirmed that logging was functioning correctly, while notifications were intentionally disabled.
+
+Next, log events were reviewed directly in CloudWatch. The log data was tested using the Test Pattern option in the Metric Filter configuration, and the expected results were returned. This confirmed that the filter pattern was matching the secret access events correctly. 
+<img width="817" height="358" alt="image" src="https://github.com/user-attachments/assets/9c3c6632-a5c3-4f76-8a03-8b7907513dba" /> 
+
+<img width="811" height="328" alt="image" src="https://github.com/user-attachments/assets/639bf9ba-563a-4cd3-b6d8-20d63a454ee2" /> 
+
+To further validate the alerting mechanism, the AWS CLI was used to manually trigger the alarm. The alarm successfully transitioned to the ALARM state when triggered manually, confirming that the alarm configuration itself was functioning as expected.
+
+<img width="940" height="147" alt="image" src="https://github.com/user-attachments/assets/0664d098-666d-439e-ba8f-d011526a3d2f" />
+
+To further validate the alerting mechanism, the AWS CLI was used to manually trigger the alarm. The alarm successfully transitioned to the ALARM state when triggered manually, confirming that the alarm configuration itself was functioning as expected. 
+
+<img width="940" height="147" alt="image" src="https://github.com/user-attachments/assets/0e02f25d-bfe6-4559-aee1-075f489caca9" />
+
+<img width="940" height="173" alt="image" src="https://github.com/user-attachments/assets/1470aeec-0205-4e61-a639-4d82c825adbd" /> 
+
+During testing, it was identified that the CloudWatch Alarm statistic was initially set to Average, which caused inconsistent alert behavior. To resolve this, the statistic was updated from Average to Sum in the CloudWatch Alarm configuration. This change ensured that even a single secret access event would reliably trigger the alarm. 
+
+<img width="940" height="311" alt="image" src="https://github.com/user-attachments/assets/412400fe-09ff-4470-82ae-1ccca8d856d5" />
+
+After updating the alarm configuration, the SNS topic associated with the alarm was opened. A test message was published manually to the SNS topic with a subject and message to verify email delivery. The message content used was:
+
+“yooo wassup maxx how u doing!”
+
+The email notification was received successfully, confirming that the SNS subscription and delivery mechanism were working correctly. 
+
+<img width="940" height="223" alt="image" src="https://github.com/user-attachments/assets/9fa6a427-ef54-409c-810c-fde8cc448480" /> 
+
+Finally, the secret was accessed again through AWS Secrets Manager. This time, the system functioned as expected:
+
+The secret access event was logged
+
+The metric was updated
+
+<img width="940" height="518" alt="image" src="https://github.com/user-attachments/assets/cfd9cecd-4660-49da-8ec9-8eca15e0c6d3" />
+
+
+The CloudWatch Alarm was triggered
+
+An email notification was delivered via SNS 
+
+<img width="940" height="310" alt="image" src="https://github.com/user-attachments/assets/442eb047-1e67-4edd-bf1e-975f1a26d017" />
+
+Conclusion
+
+With all components validated, the cloud security monitoring system was confirmed to be fully functional. The project successfully detects secret access events and sends real-time email notifications, completing the end-to-end monitoring and alerting workflow. 
+
+📚 Achievements:
+
+Secret access events were tracked using CloudTrail
+
+Logs were centralized in CloudWatch
+
+Metric filters converted logs into actionable metrics
+
+Alarms triggered reliably on secret access
+
+Email notifications were delivered using SNS
+
+This project demonstrates a real-world AWS security monitoring workflow and provides strong hands-on experience in cloud observability and security.
+
+🔮 Future Enhancements
+
+Slack or PagerDuty integration
+
+EventBridge-based alert routing
+
+Least-privilege IAM roles
+
+Encryption and long-term log retention
+
+Multi-region monitoring  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
