@@ -17,7 +17,8 @@ Key goals:
 
 AWS Secrets Manager ➜ AWS CloudTrail ➜ Amazon CloudWatch Logs ➜ Metric Filter ➜ CloudWatch Alarm ➜ Amazon SNS ➜ Email Notification
 
-<img width="940" height="353" alt="Architecture diagram" src="https://github.com/user-attachments/assets/9f6b9d9b-7c4c-4ece-800c-5b948be5a1cd" />
+
+<img width="1536" height="1024" alt="Cloud monitoring system" src="https://github.com/user-attachments/assets/a549ed46-076f-4800-afa2-0479eb602b2b" />
 
 ---
 
